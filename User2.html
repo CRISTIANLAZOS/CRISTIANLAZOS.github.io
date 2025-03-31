@@ -72,11 +72,37 @@
                 padding: 10px;
             }
         }
+
+
+
+
+        .camera-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-left: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .camera-button:hover {
+            background: #45a049;
+        }
+        video {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 10px;
+        }
+
+        .capture-btn, .close-btn {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 id="user-welcome">🚗 Bienvenido a tu panel de usuario 🚙</h1>
+        <h1 id="user-welcome"> Bienvenido a tu panel de usuario </h1>
         <button class="button" onclick="logout()">Cerrar Sesión</button>
 
         <div class="card">
@@ -87,7 +113,17 @@
         <div class="card">
             <h2>🆕 Registrar Nuevo Vehículo</h2>
             <input type="text" id="plate-input" placeholder="Ingresa la placa" minlength="7" maxlength="7" oninput="validatePlateInput(this)">
-            <p id="error-message" style="color: red; font-size: 14px;"></p>
+            <button class="camera-button" onclick="startCamera()">📷</button>
+          
+
+            <video id="camera-stream" autoplay></video>
+            <canvas id="capture-canvas" style="display:none;"></canvas>
+            <button class="button capture-btn" onclick="captureImage()">Capturar</button>
+            <button class="button close-btn" onclick="stopCamera()">Cerrar Cámara</button>
+            <br>
+            <p id="error-message" style="color: red;"></p>
+
+
             <button class="button" onclick="addVehicle()">Agregar Vehículo</button>
             <ul id="vehicle-list"></ul>
         </div>
@@ -111,7 +147,7 @@
         async function getUserData() {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) return window.location.href = "login.html";
-            document.getElementById("user-welcome").textContent = `🚗 Bienvenido, ${user.user_metadata?.full_name || "Usuario"}`;
+            document.getElementById("user-welcome").textContent = ` Bienvenido ${user.user_metadata?.full_name || "Usuario"}`;
             loadUserVehicles(user.id);
         }
 
@@ -125,6 +161,92 @@
             input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
             document.getElementById("error-message").textContent = input.value.length < 7 ? "La placa debe tener 7 caracteres." : "";
         }
+
+
+
+
+
+
+
+        let videoStream = null;
+
+        function startCamera() {
+            const video = document.getElementById("camera-stream");
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    videoStream = stream;
+                    video.srcObject = stream;
+                    video.style.display = "block";
+
+
+                     // Mostrar los botones al encender la cámara
+                     document.querySelector(".capture-btn").style.display = "inline-block";
+                     document.querySelector(".close-btn").style.display = "inline-block";
+                    
+                })
+                .catch(err => {
+                    console.error("Error al acceder a la cámara:", err);
+                    document.getElementById("error-message").textContent = "No se pudo acceder a la cámara.";
+                });
+        }
+
+        function captureImage() {
+            if (!videoStream) {
+                document.getElementById("error-message").textContent = "La cámara no está activa.";
+                return;
+            }
+            const video = document.getElementById("camera-stream");
+            const canvas = document.getElementById("capture-canvas");
+            const context = canvas.getContext("2d");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(sendToPlateRecognition, "image/jpeg");
+
+              // Cerrar la cámara después de capturar la imagen
+             stopCamera();
+
+        }
+
+        function sendToPlateRecognition(blob) {
+            const formData = new FormData();
+            formData.append("upload", blob);
+            
+            fetch("https://api.platerecognizer.com/v1/plate-reader/", {
+                method: "POST",
+                headers: { "Authorization": "Token 2bebd371106a422539be68645b7b67ac46ffc319" },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.results.length > 0) {
+                    document.getElementById("plate-input").value = result.results[0].plate.toUpperCase();
+                } else {
+                    document.getElementById("error-message").textContent = "No se detectó ninguna placa en la imagen.";
+                }
+            });
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById("camera-stream").style.display = "none";
+
+            // Ocultar los botones al cerrar la cámara
+            document.querySelector(".capture-btn").style.display = "none";
+            document.querySelector(".close-btn").style.display = "none";
+            videoStream = null;
+        }
+
+
+
+
+
+
+
+
+
 
         async function addVehicle() {
             const plate = document.getElementById("plate-input").value.toLowerCase().trim();
