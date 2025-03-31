@@ -172,11 +172,17 @@
 
         function startCamera() {
             const video = document.getElementById("camera-stream");
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    videoStream = stream;
-                    video.srcObject = stream;
-                    video.style.display = "block";
+              const constraints = {
+        video: {
+            facingMode: "environment"  // 'environment' indica la cámara trasera
+        }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+            videoStream = stream;
+            video.srcObject = stream;
+            video.style.display = "block";
 
 
                      // Mostrar los botones al encender la cámara
