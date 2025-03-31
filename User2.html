@@ -111,7 +111,7 @@
         async function getUserData() {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) return window.location.href = "login.html";
-            document.getElementById("user-welcome").textContent = `🚗 Bienvenido, ${user.email}`;
+            document.getElementById("user-welcome").textContent = `🚗 Bienvenido, ${user.user_metadata?.full_name || "Usuario"}`;
             loadUserVehicles(user.id);
         }
 
