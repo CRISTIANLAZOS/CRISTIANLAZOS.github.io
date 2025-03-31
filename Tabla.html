@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Accesos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2d2d2d;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #3d3d3d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        .filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+        input, select, button {
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background: #505050;
+        }
+        .styled-select {
+            padding: 10px;
+            border: 2px solid #ffcc00; /* Borde amarillo para resaltar */
+            background-color: #3d3d3d; /* Fondo oscuro */
+            color: white; /* Texto en blanco */
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .styled-select:hover {
+            border-color: #ffaa00; /* Borde más brillante al pasar el mouse */
+            background-color: #444;
+        }
+        
+        .styled-select:focus {
+            border-color: #ff8800; /* Resalta cuando está seleccionado */
+            box-shadow: 0 0 5px rgba(255, 136, 0, 0.8);
+        }
+        .button-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .styled-button {
+            padding: 10px 20px;
+            background-color: #ffcc00;
+            color: black;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .styled-button:hover {
+            background-color: #ffaa00;
+            transform: scale(1.05);
+        }
+        
+        .styled-button:active {
+            background-color: #ff8800;
+        }
+          
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Historial de Accesos</h1>
+        <div class="filter-container">
+            <select id="filter-plate" class="styled-select">
+                <option value="">Seleccione una placa</option>
+            </select>
+            <input type="date" id="filter-date">
+            <button onclick="fetchAccessRecords()">Filtrar</button>
+        </div>
+        
+        
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Placa</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Tipo de Acceso</th>
+                    </tr>
+                </thead>
+                <tbody id="access-table-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        const supabase = window.supabase.createClient(
+
+        "https://vzgoxegupsjkiwlxkete.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc"
+    );
+
+    let currentUserId = null; // Variable global para almacenar el userId
+
+    async function getUserData() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) return window.location.href = "login.html";
+        
+        currentUserId = user.id;
+        console.log("Usuario obtenido:", currentUserId); 
+        fetchAccessRecords(); 
+    
+        // 📌 Obtener placas del usuario para llenar el <select>
+        let { data: userPlates, error: plateError } = await supabase
+            .from("vehicles")
+            .select("plate")
+            .eq("user_id", currentUserId);
+    
+        if (plateError || !userPlates) {
+            console.error("Error al obtener placas del usuario:", plateError);
+            return;
+        }
+    
+        // 📌 Llenar el <select> con las placas obtenidas
+        const plateSelect = document.getElementById("filter-plate");
+        plateSelect.innerHTML = `<option value="">Todas las placas</option>` + 
+            userPlates.map(v => `<option value="${v.plate}">${v.plate}</option>`).join("");
+    }
+    
+    
+
+async function fetchAccessRecords() {
+    // ⚠️ Verifica si el usuario tiene un ID válido
+    if (!currentUserId) {
+        console.error("Error: userId es undefined");
+        return;
+    }
+
+    // 🔍 Obtiene los valores de los filtros ingresados por el usuario
+    const plateFilter = document.getElementById("filter-plate").value.trim().toLowerCase(); // Normaliza a minúsculas
+    const dateFilter = document.getElementById("filter-date").value;
+
+    // 📌 1️⃣ Consulta la tabla 'vehicles' para obtener las placas asociadas al usuario
+    let { data: userPlates, error: plateError } = await supabase
+        .from("vehicles")
+        .select("plate") // Solo extrae la columna 'plate'
+        .eq("user_id", currentUserId); // Filtra por el usuario actual
+
+    // ⚠️ Si hay un error o no se encuentran placas, se muestra un mensaje y se detiene la ejecución
+    if (plateError || !userPlates) {
+        console.error("Error al obtener placas del usuario:", plateError);
+        return;
+    }
+
+    // 🔹 Extrae las placas en un array para usarlas en la siguiente consulta
+    const userPlatesArray = userPlates.map(v => v.plate);
+    console.log("Placas del usuario:", userPlatesArray);
+
+    // 📌 2️⃣ Consulta la tabla 'registros_accesos' buscando las placas del usuario
+    let query = supabase
+        .from("registros_accesos")
+        .select("placa, timestamp, tipo_acceso")
+        .in("placa", userPlatesArray); // 📍 Aquí compara las placas obtenidas con los registros de acceso
+
+    // 📌 3️⃣ Si el usuario ingresó un filtro por placa, se aplica la condición extra
+    if (plateFilter) {
+        query = query.eq("placa", plateFilter.toLowerCase());
+
+    }
+
+    // 📌 4️⃣ Si el usuario ingresó un filtro por fecha, se aplica el rango de búsqueda
+    if (dateFilter) {
+        query = query
+            .gte("timestamp", `${dateFilter} 00:00:00`) // Desde las 00:00 del día seleccionado
+            .lte("timestamp", `${dateFilter} 23:59:59`); // Hasta las 23:59 del mismo día
+    }
+
+    // 🔍 Ejecuta la consulta final
+    const { data, error } = await query;
+    if (error) {
+        console.error("Error al obtener registros:", error);
+        return;
+    }
+
+    console.log("Registros obtenidos:", data);
+
+    // 📌 5️⃣ Actualiza la tabla HTML con los registros obtenidos
+    const tableBody = document.getElementById("access-table-body");
+    tableBody.innerHTML = data.map(record => {
+        const date = new Date(record.timestamp);
+        return `
+        <tr>
+            <td>${record.placa}</td>
+            <td>${date.toLocaleDateString()}</td>
+            <td>${date.toLocaleTimeString()}</td>
+            <td>${record.tipo_acceso}</td>
+        </tr>
+        `;
+    }).join("");
+}
+
+getUserData();
+    </script>
+
+
+    <div class="button-container">
+        <button onclick="location.href='user2.html'" class="styled-button">
+            🔙 Ir a la interfaz de usuario
+        </button>
+    </div>
+    
+
+</body>
+</html>

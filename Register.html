@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrarse</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+ <!-- Incluir Supabase desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/supabase.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-r from-gray-900 to-gray-800 text-white flex flex-col items-center justify-center p-6">
+
+    <!-- Barra Superior -->
+    <div class="absolute top-4 right-6 flex space-x-4">
+
+<a href="index.html" <button class="text-white border-white flex items-center space-x-2 border-2 px-4 py-2 rounded-md">
+            <i class="fas fa-sign-in-alt"></i> <span>Home</span>
+        </button></a>
+
+        <a href="login.html" class="bg-blue-500 hover:bg-blue-600 text-white flex items-center space-x-2 px-4 py-2 rounded-md">
+            <i class="fas fa-sign-in-alt"></i> <span>Iniciar Sesión</span>
+        </a>
+    </div>
+
+    <!-- Encabezado -->
+    <h1 class="text-5xl font-bold mb-6 text-center">
+        Registrarse
+    </h1>
+
+    <!-- Formulario de Registro -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
+        <form id="register-form" action="#" method="POST" class="space-y-4">
+            <div>
+                <label for="register-name" class="block text-sm">Nombre Completo</label>
+                <input type="text" id="register-name" name="name" placeholder="Ingresa tu nombre" class="w-full p-3 bg-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500" required>
+            </div>
+            <div>
+                <label for="register-email" class="block text-sm">Correo Electrónico</label>
+                <input type="email" id="register-email" name="email" placeholder="Ingresa tu correo" class="w-full p-3 bg-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500" required>
+            </div>
+            <div>
+                <label for="register-password" class="block text-sm">Contraseña</label>
+                <input type="password" id="register-password" name="password" placeholder="Ingresa tu contraseña" class="w-full p-3 bg-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500" required>
+            </div>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white p-3 rounded-md">Registrarse</button>
+        </form>
+    </div>
+
+    <!-- Sección Informativa -->
+    <div class="mt-12 max-w-3xl text-center text-lg">
+        <p>Regístrate para acceder al sistema y gestionar tu vehículo en el estacionamiento.</p>
+    </div>
+
+<script>
+        // Configuración de Supabase (reemplaza con tu propia URL y anon key)
+        const supabaseUrl = 'https://vzgoxegupsjkiwlxkete.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Función para registrar el usuario
+        async function registerUser(nombre, correo, Contraseña) {
+            const { data, error } = await supabase.auth.signUp({
+                correo,
+                Contraseña,
+            });
+
+            if (error) {
+                alert('Error al registrar: ' + error.message);
+            } else {
+                // Si el registro es exitoso, agregamos los datos del usuario a la tabla "usuarios"
+                const { error: insertError } = await supabase.from('usuarios').insert([
+                    { nombre, correo }
+                ]);
+                if (insertError) {
+                    alert('Error al agregar los datos: ' + insertError.message);
+                } else {
+                    alert('Usuario registrado exitosamente');
+                    // Redirigir a la página de inicio de sesión o página principal
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        // Manejar el envío del formulario
+        document.getElementById('register-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const nombre = document.getElementById('register-name').value;
+            const correo = document.getElementById('register-email').value;
+            const Contraseña = document.getElementById('register-password').value;
+
+            registerUser(nombre, correo, Contraseña);
+        });
+    </script>
+
+
+
+
+
+
+</body>
+</html>

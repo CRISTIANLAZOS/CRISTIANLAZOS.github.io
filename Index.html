@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Control de Acceso Vehicular</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/animate.css"></script> <!-- Para animaciones -->
+</head>
+<body class="min-h-screen bg-gradient-to-r from-gray-900 to-gray-800 text-white flex flex-col items-center justify-center p-6">
+
+    <!-- Barra Superior -->
+    <div class="absolute top-4 right-6 flex space-x-4">
+       <a href="login.html" <button class="text-white border-white flex items-center space-x-2 border-2 px-4 py-2 rounded-md">
+            <i class="fas fa-sign-in-alt"></i> <span>Iniciar Sesión</span>
+        </button></a>
+        <a href="register.html" <button class="bg-green-500 hover:bg-green-600 text-white flex items-center space-x-2 px-4 py-2 rounded-md">
+            <i class="fas fa-user-plus"></i> <span>Registrarse</span>
+        </button></a>
+    </div>
+
+    <!-- Encabezado -->
+    <h1 class="text-5xl font-bold mb-6 text-center animate__animated animate__fadeIn animate__delay-1s">
+        Bienvenido al Sistema de Control de Acceso Vehicular
+    </h1>
+
+    <!-- Estado del Estacionamiento -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-parking text-5xl text-yellow-400"></i>
+                <div>
+                    <p class="text-lg">Total de Espacios</p>
+                    <p class="text-3xl font-bold" id="total-spaces">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-car text-5xl text-green-400"></i>
+                <div>
+                    <p class="text-lg">Espacios Disponibles</p>
+                    <p class="text-3xl font-bold" id="available-spaces">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Informativa -->
+    <div class="mt-12 max-w-3xl text-center text-lg animate__animated animate__fadeIn animate__delay-2s">
+        <p>Consulta el estado en tiempo real del estacionamiento, accede fácilmente y gestiona tu vehículo con tecnología de visión artificial.</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script>
+        // Simulando datos de ejemplo (puedes remplazarlo con una llamada a una API o base de datos)
+        const parkingStatus = {
+            total: 100,
+            available: 25
+        };
+
+        // Actualizar los valores en la interfaz
+        document.getElementById('total-spaces').innerText = parkingStatus.total;
+        document.getElementById('available-spaces').innerText = parkingStatus.available;
+    </script>
+</body>
+</html>

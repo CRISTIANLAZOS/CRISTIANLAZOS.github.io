@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Usuario - Estacionamiento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2d2d2d;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #3d3d3d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        .card {
+            background: #505050;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+        .button {
+            background: #ff5e5e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background: #ff3b3b;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        .vehicle-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .vehicle {
+            background: #666;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            width: 150px;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .button {
+                font-size: 16px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="user-welcome">🚗 Bienvenido a tu panel de usuario 🚙</h1>
+        <button class="button" onclick="logout()">Cerrar Sesión</button>
+
+        <div class="card">
+            <h2>🚘 Vehículos Registrados</h2>
+            <div class="vehicle-container" id="vehicle-list"></div>
+        </div>
+
+        <div class="card">
+            <h2>🆕 Registrar Nuevo Vehículo</h2>
+            <input type="text" id="plate-input" placeholder="Ingresa la placa" minlength="7" maxlength="7" oninput="validatePlateInput(this)">
+            <p id="error-message" style="color: red; font-size: 14px;"></p>
+            <button class="button" onclick="addVehicle()">Agregar Vehículo</button>
+            <ul id="vehicle-list"></ul>
+        </div>
+
+        <div class="card" onclick="location.href='Tabla.html'" style="cursor: pointer; padding: 15px; background: #505050; border-radius: 10px; text-align: center; color: white;">
+            <h2>📅 Historial de Accesos</h2>
+        </div>
+        
+        <div class="card"><h2>🅿️ Estado del Estacionamiento</h2><p>Espacios disponibles: 15</p></div>
+        <div class="card"><h2>💬 Quejas y Sugerencias</h2><textarea id="feedback" placeholder="Escribe aquí tu comentario"></textarea><button class="button">Enviar</button></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabase = window.supabase.createClient(
+
+        "https://vzgoxegupsjkiwlxkete.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc"
+    );
+
+        async function getUserData() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) return window.location.href = "login.html";
+            document.getElementById("user-welcome").textContent = `🚗 Bienvenido, ${user.email}`;
+            loadUserVehicles(user.id);
+        }
+
+        async function loadUserVehicles(userId) {
+            const { data, error } = await supabase.from("vehicles").select("*").eq("user_id", userId);
+            if (error) return console.error("Error al cargar vehículos:", error.message);
+            document.getElementById("vehicle-list").innerHTML = data.map(vehicle => createVehicleHTML(vehicle.plate)).join("");
+        }
+
+        function validatePlateInput(input) {
+            input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+            document.getElementById("error-message").textContent = input.value.length < 7 ? "La placa debe tener 7 caracteres." : "";
+        }
+
+        async function addVehicle() {
+            const plate = document.getElementById("plate-input").value.toLowerCase().trim();
+            if (plate.length !== 7) {
+                alert("La placa debe tener 7 caracteres alfanuméricos.");
+                return;
+            }
+        
+            // Obtener usuario autenticado
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
+                alert("Error: No se pudo obtener el usuario. Inicia sesión de nuevo.");
+                return;
+            }
+        
+            // Insertar en la base de datos
+            const { error } = await supabase
+                .from("vehicles")
+                .insert([{ plate, user_id: user.id }]);
+        
+            if (error) {
+                alert("Error al registrar vehículo: " + error.message);
+                return;
+            }
+        
+            // Insertar en la interfaz con mejor método
+            const vehicleList = document.getElementById("vehicle-list");
+            vehicleList.insertAdjacentHTML("beforeend", createVehicleHTML(plate));
+        
+            // Limpiar campo de entrada
+            document.getElementById("plate-input").value = "";
+        }
+        
+        
+        function formatPlate(plateNumber) {
+            // Elimina cualquier carácter no alfanumérico (por si acaso)
+            let cleanPlate = plateNumber.replace(/[^a-zA-Z0-9]/g, "");
+            
+            // Verifica si la placa tiene al menos 7 caracteres
+            if (cleanPlate.length < 7) return plateNumber; 
+        
+            // Inserta los guiones en las posiciones adecuadas
+            return `${cleanPlate.slice(0, 3)}-${cleanPlate.slice(3, 5)}-${cleanPlate.slice(5, 7)}`;
+        }
+
+        function generatePlateImage(plateNumber) {
+            return `
+                <svg width="150" height="80" viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="300" height="160" rx="15" fill="white" stroke="black" stroke-width="5"/>
+                    <rect x="0" y="10" width="300" height="30" fill="#4B0082"/>
+                    <text x="150" y="32" font-size="20" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">
+                        CHIHUAHUA
+                    </text>
+                    <text x="150" y="90" font-size="40" font-weight="bold" fill="blue" text-anchor="middle" font-family="Arial">
+                       ${formatPlate(plateNumber)}
+                    </text>
+                    <text x="150" y="130" font-size="14" font-weight="bold" fill="purple" text-anchor="middle" font-family="Arial">
+                        TRANSPORTE PRIVADO AUTOMÓVIL
+                    </text>
+                    <rect x="260" y="15" width="30" height="20" fill="lightgray" />
+                    <circle cx="15" cy="145" r="12" fill="yellow" opacity="0.5"/>
+                    <circle cx="283" cy="145" r="12" fill="brown" opacity="0.5" />
+                </svg>
+            `;
+        }
+
+        async function deleteVehicle(plate) {
+            // Preguntar al usuario antes de eliminar
+            const confirmDelete = confirm(`¿Estás seguro de que quieres eliminar la placa "${plate}"?`);
+            if (!confirmDelete) return;
+        
+            // Obtener usuario autenticado
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
+                alert("Error: No se pudo obtener el usuario. Inicia sesión de nuevo.");
+                return;
+            }
+        
+            // Eliminar de la base de datos
+            const { error } = await supabase
+                .from("vehicles")
+                .delete()
+                .match({ plate: plate, user_id: user.id });
+        
+            if (error) {
+                alert("Error al eliminar vehículo: " + error.message);
+                return;
+            }
+        
+            // Eliminar de la interfaz
+            const vehicleElement = document.getElementById(`vehicle-${plate}`);
+            if (vehicleElement) {
+                vehicleElement.remove();
+            }
+        
+            alert(`Placa "${plate}" eliminada correctamente.`);
+        }
+        
+        
+        function createVehicleHTML(plate) {
+            return `
+                <div class="vehicle" id="vehicle-${plate}">
+                    <div>${generatePlateImage(plate)}</div>
+                    <br>
+                    <button class="button" onclick="deleteVehicle('${plate}')">❌</button>
+                </div>
+            `;
+        }
+        
+        function logout() {
+            alert("Cerrando sesión...");
+            window.location.href = "login.html";
+        }
+
+        getUserData();
+    </script>
+</body>
+</html>
