@@ -65,6 +65,19 @@
 
             errorMessage.textContent = ""; // Limpiar mensaje de error
 
+
+             if (email === 'admin@gmail.com') {
+                const clave = prompt("Introduce la clave de administrador:");
+            
+                if (clave === '1234567') {
+                    window.location.href = "admin_page.html";
+                } else {
+                    alert("Clave incorrecta. Redirigiendo al login...");
+                    window.location.href = "login.html"; // Asegúrate que el nombre del archivo sea correcto
+                }
+            }
+            
+            
             //  Intentar autenticar al usuario
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
