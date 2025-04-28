@@ -99,18 +99,18 @@
         .eq('email', email)
         .maybeSingle(); 
 
-    if (userError) {
-        console.error(userError);
-        errorMessage.textContent = "Error al verificar el estado de tu cuenta.";
-        return;
-    }
+    if (!userData) {
+    errorMessage.textContent = "No se encontró tu cuenta en la base de datos de usuarios.";
+    await supabase.auth.signOut();
+    return;
+}
 
-    if (userData.status !== 'activo') {
-        errorMessage.textContent = "Tu cuenta aún no ha sido aprobada por un administrador.";
-        await supabase.auth.signOut(); // Cerrar sesión inmediatamente
-        return;
-    }
 
+if (userData.status !== 'activo') {
+    errorMessage.textContent = "Tu cuenta aún no ha sido aprobada por un administrador.";
+    await supabase.auth.signOut();
+    return;
+}
 
             
             //  Si el correo está confirmado, redirigir al usuario
