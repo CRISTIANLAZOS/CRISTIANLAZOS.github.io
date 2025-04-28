@@ -92,6 +92,27 @@
                 return;
             }
 
+                      // 3. Buscar al usuario en la tabla "users" para ver si su status es "activo"
+        const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('status')
+        .eq('email', email)
+        .single(); // Solo esperamos un resultado
+
+    if (userError) {
+        console.error(userError);
+        errorMessage.textContent = "Error al verificar el estado de tu cuenta.";
+        return;
+    }
+
+    if (userData.status !== 'activo') {
+        errorMessage.textContent = "Tu cuenta aún no ha sido aprobada por un administrador.";
+        await supabase.auth.signOut(); // Cerrar sesión inmediatamente
+        return;
+    }
+
+
+            
             //  Si el correo está confirmado, redirigir al usuario
             window.location.href = "User2.html";
         });
