@@ -60,7 +60,7 @@
 
     
 
-        // ✅ MANEJAR EL REGISTRO DE USUARIO
+        //  MANEJAR EL REGISTRO DE USUARIO
         document.getElementById('register-form').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -68,25 +68,47 @@
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
 
-            // 2️⃣ REGISTRAR AL USUARIO EN SUPABASE AUTH
-            const { data, error } = await supabase.auth.signUp({
+            //  REGISTRAR AL USUARIO EN SUPABASE AUTH
+            const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
-                    data: { full_name: name } // Guardar nombre en `user_metadata`
+                    data: { full_name: name }
                 }
             });
+            
+            if (authError) {
+                console.error("Error al registrar usuario:", authError.message);
+            } else {
+                const authUserId = authData.user.id; // ID de autenticación generado
+                const userEmail = authData.user.email; // Email registrado
+                
+                // Insertar en tu tabla personalizada
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .insert([{
+                        auth_id: authUserId,
+                        name: name,
+                        email: userEmail,
+                        status: 'pendiente' // Estado inicial como "pendiente"
+                    }]);
+                
+                if (userError) {
+                    console.error("Error al insertar en tabla users:", userError.message);
+                } else {
+                    console.log("Usuario insertado en tabla users correctamente:", userData);
+                }
+             
 
-            if (error) {
-                console.error("Error al registrar usuario:", error.message);
-                return;
-            }
+             }
 
             console.log("Registro exitoso. Se envió un correo de confirmación.");
 
-            window.location.href = "User2.html";
+            window.location.href = "login.html";
 
         });
+
+
     </script>
 
 </body>
