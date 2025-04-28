@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administrar Usuarios Pendientes</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-blue-700 text-white p-4 shadow">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">Administrar Usuarios Pendientes</h1>
+      <div class="space-x-2">
+        <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded hover:bg-red-500">Cerrar sesión</button>
+        <button 
+          class="bg-green-100 text-black px-3 py-1 rounded hover:bg-green-200" 
+          onclick="window.location.href='admin_page.html';"
+        >
+          Volver
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6">
+    <section class="bg-white p-4 rounded-xl shadow">
+      <h2 class="text-lg font-semibold mb-4">Usuarios Pendientes de Aprobación</h2>
+
+      <div id="usuariosPendientes" class="space-y-4">
+        <!-- Aquí se cargarán los usuarios pendientes -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Inicialización de Supabase
+    const supabase = window.supabase.createClient(
+      "https://vzgoxegupsjkiwlxkete.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc"
+    );
+
+    // Función para cargar usuarios pendientes
+    async function cargarUsuariosPendientes() {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('status', 'pendiente');
+
+      if (error) {
+        console.error("Error al obtener usuarios pendientes:", error.message);
+        return;
+      }
+
+      const contenedor = document.getElementById('usuariosPendientes');
+      contenedor.innerHTML = '';
+
+      if (users.length === 0) {
+        contenedor.innerHTML = '<p class="text-gray-500">No hay usuarios pendientes.</p>';
+        return;
+      }
+
+      users.forEach(user => {
+        const userDiv = document.createElement('div');
+        userDiv.className = "flex justify-between items-center border p-4 rounded";
+      
+        userDiv.innerHTML = `
+          <div>
+            <p class="font-semibold">Nombre: ${user.name || 'No disponible'}</p>
+            <p class="text-sm text-gray-600">Email: ${user.email || 'No disponible'}</p>
+          </div>
+        `;
+      
+        const aprobarButton = document.createElement('button');
+        aprobarButton.className = "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500";
+        aprobarButton.textContent = "Aprobar";
+        aprobarButton.addEventListener('click', () => aprobarUsuario(user.id));
+      
+        
+        userDiv.appendChild(aprobarButton);
+        contenedor.appendChild(userDiv);
+
+        const denegarButton = document.createElement('button');
+        denegarButton.className = "bg-red-600 text-white px-4 py-2 rounded hover:bg-green-500";
+        denegarButton.textContent = "Denegar";
+        denegarButton.addEventListener('click', () => rechazarUsuario(user.id));
+      
+        
+        userDiv.appendChild(denegarButton);
+        contenedor.appendChild(userDiv);
+
+
+
+      });
+      
+    }
+
+    // Función para aprobar usuario
+    async function aprobarUsuario(userId) {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ status: 'activo' })
+        .eq('id', userId);
+
+      if (error) {
+        console.error("Error al aprobar usuario:", error.message);
+        alert('Error al aprobar usuario.');
+      } else {
+        alert('Usuario aprobado exitosamente.');
+        cargarUsuariosPendientes(); // Recargar la lista
+      }
+    }
+
+    // (Opcional) Función para rechazar usuario
+    async function rechazarUsuario(userId) {
+      const { data, error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        console.error("Error al rechazar usuario:", error.message);
+        alert('Error al rechazar usuario.');
+      } else {
+        alert('Usuario rechazado y eliminado.');
+        cargarUsuariosPendientes(); // Recargar la lista
+      }
+    }
+
+    // Función para cerrar sesión
+    function logout() {
+      window.location.href = "login.html";
+    }
+
+    // Ejecutar al cargar la página
+    window.onload = cargarUsuariosPendientes;
+  </script>
+
+</body>
+</html>
