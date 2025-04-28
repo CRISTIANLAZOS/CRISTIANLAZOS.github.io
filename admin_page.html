@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administrador</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+  
+
+  <!-- Header -->
+  <header class="bg-blue-700 text-white p-4 shadow">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">Administrador - Control de Acceso Vehicular</h1>
+      <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded hover:bg-red-500">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Estadísticas generales -->
+    <section class="col-span-2 bg-white p-4 rounded-xl shadow">
+      <h2 class="text-lg font-semibold mb-4">Estadísticas del Estacionamiento</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="bg-blue-100 p-4 rounded-xl">
+          <p class="text-2xl font-bold" id="espacios-ocupados">32</p>
+          <p>Espacios ocupados</p>
+        </div>
+        <div class="bg-green-100 p-4 rounded-xl">
+          <p class="text-2xl font-bold" id="espacios-disponibles">68</p>
+          <p>Espacios disponibles</p>
+        </div>
+        <div class="bg-yellow-100 p-4 rounded-xl">
+          <p class="text-2xl font-bold" id="reservados-ocupados">5</p>
+          <p>Reservados ocupados</p>
+        </div>
+        <div class="bg-purple-100 p-4 rounded-xl">
+          <p class="text-2xl font-bold" id="discapacitados-disponibles">3</p>
+          <p>Discapacidad disponibles</p>
+        </div>
+      </div>
+      <canvas id="chart" class="mt-6"></canvas>
+    </section>
+    
+
+    <!-- Acciones rápidas -->
+    <section class="bg-white p-4 rounded-xl shadow">
+      <h2 class="text-lg font-semibold mb-4">Acciones rápidas</h2>
+      <div class="space-y-3">
+        <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-500">Registrar nuevo usuario</button>
+        <button class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-500">Exportar historial</button>
+        <button class="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-400">Ver vehículos en espera</button>
+        <button class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-400">Bloquear acceso temporal</button>
+        <button class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-500">Ver reportes</button>
+        <button 
+        class="w-full bg-gray-600 text-white py-2 rounded hover:bg-gray-500" 
+        onclick="window.location.href='configuracion_admin.html';"
+      >
+        Configurar estacionamiento
+      </button>
+      
+      </div>
+    </section>
+
+    <!-- Tabla de movimientos -->
+    <section class="col-span-3 bg-white p-4 rounded-xl shadow mt-6">
+      <h2 class="text-lg font-semibold mb-4">Historial de Movimientos</h2>
+
+      <!-- Filtros por fecha y placa -->
+      <div class="mb-4">
+        <input type="date" id="startDate" class="p-2 border rounded mr-2" placeholder="Desde" />
+        <input type="date" id="endDate" class="p-2 border rounded mr-2" placeholder="Hasta" />
+        <input type="text" id="plateFilter" class="p-2 border rounded mr-2" placeholder="Filtrar por placa" />
+        <button id="filterButton" class="bg-blue-500 text-white px-4 py-2 rounded">Filtrar</button>
+      </div>
+
+      <div class="overflow-auto">
+        <table id="access-history-table" class="min-w-full text-sm text-left">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="p-2">Placa</th>
+              <th class="p-2">Fecha</th>
+              <th class="p-2">Hora de entrada</th>
+              <th class="p-2">Tipo de acceso</th>
+              <th class="p-2">Resultado</th>
+              <th class="p-2">Observaciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <!-- Aquí se llenarán las filas dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  
+  <footer class="bg-blue-700 text-white p-4 text-center">
+    <p> 2025 Sistema de Control de Acceso Vehicular</p>
+  </footer>
+  
+  <script>
+    // Inicialización global de Supabase
+    const supabase = window.supabase.createClient(
+      "https://vzgoxegupsjkiwlxkete.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc"
+    );
+
+    // Función para cargar las estadísticas del estacionamiento
+    async function loadParkingStats() {
+      const { data, error } = await supabase
+        .from('estado_estacionamiento')
+        .select('espacios_ocupados, total_espacios, reservados_ocupados, discapacitados_disponibles')
+        .order('timestamp', { ascending: false })
+        .limit(1); // Solo obtenemos la última entrada
+  
+      if (error) {
+        console.error("Error al cargar las estadísticas:", error);
+        return;
+      }
+  
+      if (data.length > 0) {
+        const stats = data[0]; // Última fila de datos
+  
+        // Actualizamos las estadísticas en la interfaz
+        console.log(stats);
+        document.querySelector('#espacios-ocupados').textContent = stats.espacios_ocupados;
+        document.querySelector('#espacios-disponibles').textContent = stats.total_espacios;
+        document.querySelector('#reservados-ocupados').textContent = stats.reservados_ocupados;
+        document.querySelector('#discapacitados-disponibles').textContent = stats.discapacitados_disponibles;
+  
+        // Actualizamos el gráfico con los nuevos datos
+        updateChart(stats);
+      }
+    }
+  
+    // Función para actualizar el gráfico de estadísticas
+    function updateChart(stats) {
+      const ctx = document.getElementById('chart').getContext('2d');
+      const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Ocupados', 'Disponibles', 'Reservados', 'Discapacidad'],
+          datasets: [{
+            data: [
+              stats.espacios_ocupados,
+              stats.total_espacios,
+              stats.reservados_ocupados,
+              stats.discapacitados_disponibles
+            ],
+            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    }
+
+    // Llamar a la función de carga al cargar la página
+  
+
+    
+
+    // Función para cargar el historial de accesos
+    async function loadAccessHistory() {
+      const { data, error } = await supabase
+        .from('registros_accesos')
+        .select('placa, timestamp, tipo_acceso, resultado, observaciones')
+        .order('timestamp', { ascending: false });  // Ordenar por fecha más reciente
+  
+      if (error) {
+        console.error("Error al cargar el historial:", error);
+        return;
+      }
+  
+      // Obtener el cuerpo de la tabla
+      const tbody = document.querySelector('#access-history-table tbody');
+      tbody.innerHTML = ''; // Limpiar cualquier fila existente
+  
+      // Llenar la tabla con los datos obtenidos
+      data.forEach(record => {
+        const row = document.createElement('tr');
+        
+        // Crear una celda para cada dato
+        const plateCell = document.createElement('td');
+        plateCell.textContent = record.placa;
+        row.appendChild(plateCell);
+  
+        const dateCell = document.createElement('td');
+        const date = new Date(record.timestamp);
+        dateCell.textContent = date.toLocaleDateString('es-ES');
+        row.appendChild(dateCell);
+  
+        const timeCell = document.createElement('td');
+        timeCell.textContent = date.toLocaleTimeString('es-ES');
+        row.appendChild(timeCell);
+  
+        const accessTypeCell = document.createElement('td');
+        accessTypeCell.textContent = record.tipo_acceso;
+        row.appendChild(accessTypeCell);
+  
+        const resultCell = document.createElement('td');
+        resultCell.textContent = record.resultado;
+        row.appendChild(resultCell);
+  
+        const observationsCell = document.createElement('td');
+        observationsCell.textContent = record.observaciones;
+        row.appendChild(observationsCell);
+  
+        // Añadir la fila a la tabla
+        tbody.appendChild(row);
+      });
+    }
+  
+
+
+    function logout() {
+      window.location.href = "login.html";
+    }
+    
+    // Llamar a la función de carga del historial al cargar la página
+    window.onload = function() {
+      loadParkingStats();
+  loadAccessHistory();
+};
+  </script>
+</body>
+</html>

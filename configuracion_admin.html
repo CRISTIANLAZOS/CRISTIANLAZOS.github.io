@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración del Estacionamiento</title>
+ 
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-blue-700 text-white p-4 shadow">
+
+    
+    
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">Configuración de Estacionamiento</h1>
+      <button onclick="logout()" class="bg-red-600 px-3 py-1 rounded hover:bg-red-500">Cerrar sesión</button>
+      <button 
+        class=" bg-green-100 px-3  text-black py-1 rounded hover:bg-green-100" 
+        onclick="window.location.href='admin_page.html';"
+      >
+        Volver
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-6">
+    <!-- Configuración del estacionamiento -->
+    <section class="bg-white p-4 rounded-xl shadow">
+      <h2 class="text-lg font-semibold mb-4">Modificar Parámetros de Estacionamiento</h2>
+
+      <!-- Formulario para modificar datos -->
+      <div class="space-y-4">
+        <div>
+          <label for="total_lugares" class="block">Lugares totales</label>
+          <input id="total_lugares" type="number" class="p-2 border rounded w-full" />
+        </div>
+        <div>
+          <label for="lugares_discapacitados" class="block">Lugares asignados para discapacitados</label>
+          <input id="lugares_discapacitados" type="number" class="p-2 border rounded w-full" />
+        </div>
+        <div>
+          <label for="lugares_motociclistas" class="block">Lugares asignados para proveedores (carga / descarga)</label>
+          <input id="lugares_motociclistas" type="number" class="p-2 border rounded w-full" />
+        </div>
+
+        <!-- Agregar nuevo tipo de lugar -->
+       
+
+        <button onclick="guardarConfiguracion()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Guardar Cambios</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Inicialización de Supabase
+    const supabase = window.supabase.createClient(
+      "https://vzgoxegupsjkiwlxkete.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc"
+    );
+  
+    // Cargar los datos actuales del estacionamiento
+    async function cargarConfiguracion() {
+      const { data, error } = await supabase
+        .from('estado_estacionamiento')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(1); // Obtener solo el último registro
+  
+      if (error) {
+        console.error("Error al cargar configuración:", error);
+        return;
+      }
+  
+      if (data.length > 0) {
+        const config = data[0];
+        // Llenar los campos con los datos actuales
+        document.getElementById('total_lugares').value = config.total_espacios;
+        document.getElementById('lugares_discapacitados').value = config.discapacitados_disponibles;
+        document.getElementById('lugares_motociclistas').value = config.carga_disponibles;
+      }
+    }
+  
+    // Función para guardar la configuración actualizada
+    async function guardarConfiguracion() {
+      const totalEspacios = document.getElementById('total_lugares').value;
+      const discapacitados = document.getElementById('lugares_discapacitados').value;
+      const motociclistas = document.getElementById('lugares_motociclistas').value;
+      
+      // Obtener el primer registro para actualizarlo
+      const { data, error } = await supabase
+        .from('estado_estacionamiento')
+        .select('*')
+        .order('timestamp', { ascending: true })
+        .limit(1); // Obtener el primer registro
+  
+      if (error) {
+        console.error("Error al obtener primer registro:", error);
+        return;
+      }
+  
+      if (data.length > 0) {
+        const id = data[0].id; // ID del primer registro
+  
+        const { updateError } = await supabase
+          .from('estado_estacionamiento')
+          .update({
+            total_espacios: totalEspacios,
+            discapacitados_disponibles: discapacitados,
+            carga_disponibles: motociclistas,
+            timestamp: new Date(),
+          })
+          .eq('id', id); // Actualizar el primer registro usando su ID
+  
+        if (updateError) {
+          console.error("Error al actualizar configuración:", updateError);
+        } else {
+          alert('Configuración actualizada con éxito');
+        }
+      } else {
+        console.error("No se encontró el primer registro.");
+      }
+    }
+  
+    // Cargar los datos al iniciar la página
+    window.onload = cargarConfiguracion;
+  
+    function logout() {
+      window.location.href = "login.html";
+    }
+  </script>
+  
+</body>
+</html>
