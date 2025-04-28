@@ -97,7 +97,7 @@
         .from('users')
         .select('status')
         .eq('email', email)
-        .single(); // Solo esperamos un resultado
+        .maybeSingle(); 
 
     if (userError) {
         console.error(userError);
