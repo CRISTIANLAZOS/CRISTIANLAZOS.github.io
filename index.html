@@ -5,27 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Control de Acceso Vehicular</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/animate.css"></script> <!-- Para animaciones -->
-</head>
-<body class="min-h-screen bg-gradient-to-r from-gray-900 to-gray-800 text-white flex flex-col items-center justify-center p-6">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script> <!-- Iconos FontAwesome -->
+    <!-- Agregar los CSS de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Barra Superior -->
-    <div class="absolute top-4 right-6 flex space-x-4">
-       <a href="login.html" <button class="text-white border-white flex items-center space-x-2 border-2 px-4 py-2 rounded-md">
-            <i class="fas fa-sign-in-alt"></i> <span>INICIAR SESIÓN </span>
-        </button></a>
-        <a href="register.html" <button class="bg-green-500 hover:bg-green-600 text-white flex items-center space-x-2 px-4 py-2 rounded-md">
-            <i class="fas fa-user-plus"></i> <span>Registrarse</span>
-        </button></a>
-    </div>
+    <style>
+        .carousel-item {
+            height: 400px;
+            overflow: hidden;
+          }
+        .carousel-item img {
+            height: 400px; /* Altura fija */
+            object-fit: cover; /* Recorta la imagen para que llene bien */
+            width: 100%; /* Ocupa todo el ancho */
+        }
+    </style>
+    
+
+
+</head>
+<body class="min-h-screen bg-gradient-to-r from-gray-900 to-gray-800 text-white flex flex-col items-center justify-start p-6">
+
+    <!-- Barra Superior Fija -->
+    <header class="w-full bg-gray-900 shadow-lg fixed top-0 left-0 z-10 p-4">
+
+        <div class="flex justify-between items-center max-w-7xl mx-auto">
+            <div class="text-white text-2xl font-semibold">
+                <span>Bienvenido.</span>
+            </div>
+            <div class="flex flex-wrap space-x-4 justify-center">
+                <a href="login.html">
+                  <button class="bg-blue-500 text-white border-white flex items-center space-x-2 border-2 px-4 py-2 rounded-md 
+                                 text-base md:text-lg">
+                    <img src="login.png" class="w-6 md:w-8" alt="Iniciar Sesión">
+                    <span>Iniciar Sesión</span>
+                  </button>
+                </a>
+                <a href="register.html">
+                  <button class="bg-green-500  text-white flex items-center space-x-2 border-2 px-4 py-2 rounded-md 
+                                 text-base md:text-lg">
+                    <img src="register.png" class="w-6 md:w-8" alt="Registrarse">
+                    <span>Registrarse</span>
+                  </button>
+                </a>
+              </div>
+              
+        </div>
+    </header>
 
     <!-- Encabezado -->
-    <h1 class="text-5xl font-bold mb-6 text-center animate__animated animate__fadeIn animate__delay-1s">
-        Bienvenido al Sistema de Control de Acceso Vehicular
-    </h1>
+    <div class="mt-20 text-center">
+        <h1 class="text-5xl font-bold mb-6 animate__animated animate__fadeIn animate__delay-1s">
+          Sistema de Control de Acceso Vehicular
+        </h1> 
+    </div>
+
+    <!-- Carrusel de Imágenes -->
+    <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="parking1.jpg" class="d-block w-100 rounded-lg shadow-lg" alt="Imagen 1">
+            </div>
+            <div class="carousel-item">
+                <img src="parking2.jpg" class="d-block w-100 rounded-lg shadow-lg" alt="Imagen 2">
+            </div>
+            <div class="carousel-item">
+                <img src="parking3.jpg" class="d-block w-100 rounded-lg shadow-lg" alt="Imagen 3">
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+    
+
+    <!-- Diagrama Circular de Ocupación del Estacionamiento -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-4xl mb-8">
+        <h2 class="text-2xl font-bold mb-4">Ocupación en Tiempo Real</h2>
+        <canvas id="parking-chart"></canvas>
+    </div>
 
     <!-- Estado del Estacionamiento -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mb-8">
         <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
             <div class="flex items-center space-x-4">
                 <i class="fas fa-parking text-5xl text-yellow-400"></i>
@@ -47,23 +119,101 @@
         </div>
     </div>
 
-    <!-- Sección Informativa -->
-    <div class="mt-12 max-w-3xl text-center text-lg animate__animated animate__fadeIn animate__delay-2s">
-        <p>Consulta el estado en tiempo real del estacionamiento, accede fácilmente y gestiona tu vehículo con tecnología de visión artificial.</p>
+    <!-- Etiquetas Informativas Mejoradas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl mb-8">
+        <div class="bg-gray-700 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-clock text-4xl text-yellow-400 mb-4"></i>
+            <p class="text-lg font-semibold">Acceso Rápido</p>
+            <p class="text-sm">Evita filas y accede a tu espacio de manera rápida, sin demoras. Ahorrarás tiempo.</p>
+        </div>
+        <div class="bg-gray-700 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-lock text-4xl text-red-400 mb-4"></i>
+            <p class="text-lg font-semibold">Control Seguro</p>
+            <p class="text-sm">Tus ingresos y salidas están protegidos con un sistema confiable y altamente seguro.</p>
+        </div>
+        <div class="bg-gray-700 p-6 rounded-lg shadow-lg text-center">
+            <i class="fas fa-mobile-alt text-4xl text-blue-400 mb-4"></i>
+            <p class="text-lg font-semibold">Gestión Fácil</p>
+            <p class="text-sm">Gestiona tu acceso y vehículo desde cualquier dispositivo móvil con facilidad.</p>
+        </div>
     </div>
 
     <!-- Scripts -->
-    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
-    <script>
-        // Simulando datos de ejemplo (puedes remplazarlo con una llamada a una API o base de datos)
-        const parkingStatus = {
-            total: 100,
-            available: 25
-        };
-
-        // Actualizar los valores en la interfaz
-        document.getElementById('total-spaces').innerText = parkingStatus.total;
-        document.getElementById('available-spaces').innerText = parkingStatus.available;
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js para el gráfico -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> <!-- Bootstrap JS para carrusel -->
+    <script type="module">
+        // 1. Conectando a Supabase
+        const supabase = window.supabase.createClient(
+            "https://vzgoxegupsjkiwlxkete.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6Z294ZWd1cHNqa2l3bHhrZXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMzg0MjksImV4cCI6MjA1NDkxNDQyOX0.HLowX56y38MOOXNvWVpndSzqXBUqZoiksz0P_H0fauc"
+        );
+    
+        // 2. Inicializamos el gráfico con datos vacíos (para que cargue primero)
+        const ctx = document.getElementById('parking-chart').getContext('2d');
+        const parkingChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ocupados', 'Disponibles'],
+                datasets: [{
+                    label: 'Ocupación del Estacionamiento',
+                    data: [0, 0], // Se actualizará después
+                    backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(75, 192, 192, 0.6)'],
+                    borderColor: ['rgba(255, 99, 132, 1)', 'rgba(75, 192, 192, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (tooltipItem) {
+                                return tooltipItem.label + ': ' + tooltipItem.raw;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    
+        // 3. Función para cargar los datos reales desde Supabase
+        async function loadParkingData() {
+            // Trae solo el último registro (el más reciente)
+            let { data, error } = await supabase
+                .from('estado_estacionamiento')
+                .select('*')
+                .order('timestamp', { ascending: false })
+                .limit(1);
+    
+            if (error) {
+                console.error('Error al cargar datos:', error);
+                return;
+            }
+    
+            if (data && data.length > 0) {
+                const parkingStatus = data[0];
+    
+                // Actualizamos los datos en el gráfico
+                parkingChart.data.datasets[0].data = [
+                    parkingStatus.espacios_ocupados,
+                    parkingStatus.espacios_disponibles
+                ];
+                parkingChart.update();
+    
+                // Actualizamos los datos en el texto
+                document.getElementById('total-spaces').innerText = parkingStatus.total_espacios;
+                document.getElementById('available-spaces').innerText = parkingStatus.espacios_disponibles;
+            }
+        }
+    
+        // 4. Llamamos la función al cargar la página
+        loadParkingData();
     </script>
+    
+    
 </body>
 </html>
