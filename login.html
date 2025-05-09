@@ -82,7 +82,7 @@
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
-                errorMessage.textContent = "Error: " + error.message;
+                errorMessage.textContent = "Contraseña o usuario incorrecto";
                 return;
             }
 
