@@ -104,14 +104,14 @@
     }
 
     .camera-button {
-      background-color: #4caf50;
+      background-color: #929ab0;
       color: white;
       border: none;
       padding: 14px;
-      margin-top: 10px;
+      margin-top: 2px;
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       font-size: 24px;
       cursor: pointer;
       transition: background-color 0.3s ease, transform 0.2s ease;
@@ -213,40 +213,69 @@
    
 
     <div class="card">
-      <h2>🚘 Vehículos Registrados</h2>
+      <h2><img src="auto.png" alt="Descripción de la imagen" width="50" height="50"> Vehículos Registrados</h2>
       <div class="vehicle-container" id="vehicle-list"></div>
     </div>
 
+
+ 
     <div class="card">
-      <h2><span style="background:#1976d2; color:rgb(55, 52, 52); padding:4px 8px; border-radius:50%;">1</span> Registrar Nuevo Vehículo</h2>
-      <input type="text" id="plate-input" placeholder="Ingresa la placa (7 caracteres)" minlength="7" maxlength="7" oninput="validatePlateInput(this)">
-      <button class="camera-button" onclick="startCamera()">📷</button>
 
-      <video id="camera-stream" autoplay></video>
-      <canvas id="capture-canvas" style="display:none;"></canvas>
+<div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
+  <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">Registrar nueva placa</h2>
 
-      <button class="button capture-btn" onclick="captureImage()">Capturar</button>
-      <button class="button close-btn" onclick="stopCamera()">Cerrar Cámara</button>
+  <div class="flex justify-center items-center mb-4">
+    <button class="camera-button" onclick="startCamera()">
+      <img src="cam.png" alt="Iniciar cámara" width="30" height="30">
+    </button>
+  </div>
 
-      <p id="error-message" style="color: red; font-size: 13px; margin-top: 5px;"></p>
+  <video id="camera-stream" autoplay class="w-full mb-2 rounded-lg"></video>
+  <canvas id="capture-canvas" style="display:none;"></canvas>
 
-      <button class="button" onclick="addVehicle()">Agregar Vehículo</button>
+  <!-- Campo para mostrar la placa detectada (readonly) -->
+  <div class="mb-4">
+    <label for="placa" class="block font-medium text-gray-700">Placa detectada</label>
+    <input type="text" id="plate-input" name="placa"
+           class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl bg-gray-100 text-gray-600"
+           placeholder="Esperando captura..." readonly>
+  </div>
+
+  <div class="flex gap-2 mb-4">
+    <button class="button capture-btn w-full bg-blue-500 text-white py-2 rounded-xl" onclick="captureImage()">Capturar</button>
+    <button class="button close-btn w-full bg-red-500 text-white py-2 rounded-xl" onclick="stopCamera()">Cerrar Cámara</button>
+  </div>
+
+  <p id="error-message" style="color: red; font-size: 13px; margin-top: 5px;"></p>
+
+  <div class="mb-4">
+    <label for="alias" class="block font-medium text-gray-700">Alias del vehículo (opcional)</label>
+    <input type="text" id="alias" name="alias"
+           class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+           placeholder="Ej: Mi camioneta">
+  </div>
+
+  <div class="text-center">
+    <button class="button bg-green-500 text-white py-2 px-4 rounded-xl" onclick="confirmPlate()">Agregar Vehículo</button>
+  </div>
+</div>
+ 
     </div>
 
     <div class="card">
-      <h2>📅 Historial de Accesos</h2>
+      <h2> Historial de Accesos</h2>
       <a href="Tabla.html" class="nav-link">Ver Historial</a>
     </div>
 
     <div class="card">
-        <h2>🅿️ Estado del Estacionamiento</h2>
+        <h2> Estado del Estacionamiento</h2>
         <div class="progress-bar" id="progress-bar">
           <div class="progress-fill" id="progress-fill">Cargando...</div>
         </div>
       </div>
 
     <div class="card">
-      <h2>💬 Quejas y Sugerencias</h2>
+      <h2> Quejas y Sugerencias</h2>
       <textarea id="feedback" placeholder="Escribe aquí tu comentario"></textarea>
       <button class="button" onclick="enviarComentario()">Enviar</button>
     </div>
@@ -341,7 +370,7 @@
             
             fetch("https://api.platerecognizer.com/v1/plate-reader/", {
                 method: "POST",
-                headers: { "Authorization": "Token 2bebd371106a422539be68645b7b67ac46ffc319" },
+                headers: { "Authorization": "Token e30b53b909500dffb31c78fa1d5f7969ab2a815e" },
                 body: formData
             })
             .then(response => response.json())
@@ -550,6 +579,29 @@
       };
     }
   }
+
+
+ function confirmPlate() {
+    const plate = document.getElementById('plate-input').value;
+    if (!plate) {
+      alert("Primero debes capturar la imagen de la placa.");
+      return;
+    }
+
+    const confirmacion = confirm(`¿Es correcta esta placa? "${plate}"\n\nPresiona OK para registrar o Cancelar para volver a capturar.`);
+    if (confirmacion) {
+      addVehicle();
+    } else {
+      document.getElementById('plate-input').value = "";
+    }
+  }
+
+
+
+
+
+
+
 
   // Cargar al inicio
   cargarEstado();
