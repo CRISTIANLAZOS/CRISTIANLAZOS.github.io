@@ -19,8 +19,12 @@
 
 <!-- Menú de entrada -->
 <div id="roleSelection">
-  <button onclick="entrarComo('administrador')">Entrar como Administrador</button>
-  <button onclick="entrarComo('distribuidor')">Entrar como Distribuidor</button>
+  <button onclick="entrarComo('administrador','name')">Entrar como Administrador</button>
+ <button onclick="entrarComo('distribuidor','Distribuidor 1')">Entrar como Distribuidor 1</button>
+<button onclick="entrarComo('distribuidor2','Distribuidor 2')">Entrar como Distribuidor 2</button>
+<button onclick="entrarComo('distribuidor3','Distribuidor 3')">Entrar como Distribuidor 3</button>
+<button onclick="entrarComo('distribuidor4','Distribuidor 4')">Entrar como Distribuidor 4</button>
+
 </div>
 
 <!-- App principal -->
@@ -50,7 +54,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
-
+<script src="zonas.js"></script>
 <script>
   const supabase = window.supabase.createClient(
     'https://etjhaciiqshqmxxphzrp.supabase.co',
@@ -58,20 +62,86 @@
   );
 
   let map, markers = {}, rol = null;
-  let usuarioFalsoID = '642b28a3-144c-4ece-a5eb-954bc2fa5c54'; // ID simulado para pruebas sin login
 
-  function initMap() {
-    map = L.map('map').setView([31.6904, -106.4245], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+const coloresDistribuidores = {
+  '642b28a3-144c-4ece-a5eb-954bc2fa5c54': 'blue',
+  '8aab0994-b981-4f12-ab8c-f85213d4f4a4': 'green',
+  '8c947d4d-ece3-482b-9cfc-6eaea24179cb': 'red',
+  'bfaabc92-f9a8-478a-80b8-23d12494ac56': 'orange'
+};
+
+  // Mapa de distribuidores con sus IDs válidos (UUID)
+const distribuidores = {
+  'Distribuidor 1': '642b28a3-144c-4ece-a5eb-954bc2fa5c54',
+  'Distribuidor 2': '8aab0994-b981-4f12-ab8c-f85213d4f4a4',
+  'Distribuidor 3': '8c947d4d-ece3-482b-9cfc-6eaea24179cb',
+  'Distribuidor 4': 'bfaabc92-f9a8-478a-80b8-23d12494ac56'
+};
+
+let usuarioFalsoID = null;  // Será el UUID que asignemos según selección
+
+// Por ejemplo, si tienes un select o botones para elegir distribuidor:
+
+function seleccionarDistribuidor(nombreDistribuidor) {
+  usuarioFalsoID = distribuidores[nombreDistribuidor];
+}
+
+
+
+ function initMap() {
+  const boundsSuroriente = L.latLngBounds(
+    [31.521572, -106.410], // esquina suroeste
+    [31.606323, -106.340]  // esquina noreste
+  );
+
+  const centro = boundsSuroriente.getCenter();
+
+  map = L.map('map', {
+    maxBounds: boundsSuroriente,
+    maxBoundsViscosity: 1.0,
+    minZoom: 13,
+    maxZoom: 18
+  }).setView(centro, 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+}
+
+
+function mostrarZonasDistribuidores() {
+  for (const dist in zonasDistribuidores) {
+    const { color, colonias } = zonasDistribuidores[dist];
+    colonias.forEach(coordenadas => {
+      L.polygon(coordenadas, {
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.08
+      }).addTo(map).bindPopup(`Zona de ${dist}`);
+    });
   }
+}
 
-  function entrarComo(tipo) {
+
+
+
+
+
+
+
+
+
+
+
+
+  function entrarComo(tipo,nombre) {
     rol = tipo;
+    names=nombre;
+    seleccionarDistribuidor(names);
+
     document.getElementById('roleSelection').classList.add('hidden');
     document.getElementById('appDiv').classList.remove('hidden');
-    if (!map) initMap();
+    if (!map) initMap(); mostrarZonasDistribuidores();
 
     if (rol === 'administrador') {
       document.getElementById('adminSection').classList.remove('hidden');
@@ -102,11 +172,19 @@
     if (esAdmin) cargarSelectPuntos(data);
   }
 
-  function agregarMarcador(id, data) {
-    const marker = L.marker([data.lat, data.lng]).addTo(map);
-    marker.bindPopup(`<b>${data.nombre}</b><br>${data.contacto}`);
-    markers[id] = marker;
-  }
+function agregarMarcador(id, data) {
+  const color = coloresDistribuidores[data.distribuidor_id] || 'gray';
+
+  const marker = L.circleMarker([data.lat, data.lng], {
+    color: color,
+    radius: 8,
+    fillColor: color,
+    fillOpacity: 0.7
+  }).addTo(map);
+
+  marker.bindPopup(`<b>${data.nombre}</b><br>${data.contacto}`);
+  markers[id] = marker;
+}
 
   function clearMarkers() {
     for (const id in markers) map.removeLayer(markers[id]);
