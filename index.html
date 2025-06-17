@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>App Purificadora</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 400px; width: 100%; margin-bottom: 10px; }
+    body { font-family: Arial, sans-serif; padding: 10px; }
+    .hidden { display: none; }
+    label, input, button, select { display: block; margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<h2>App Purificadora</h2>
+
+<!-- Menú de entrada -->
+<div id="roleSelection">
+  <button onclick="entrarComo('administrador')">Entrar como Administrador</button>
+  <button onclick="entrarComo('distribuidor')">Entrar como Distribuidor</button>
+</div>
+
+<!-- App principal -->
+<div id="appDiv" class="hidden">
+  <button onclick="regresar()">Regresar</button>
+
+  <h3>Mapa</h3>
+  <div id="map"></div>
+
+  <div id="distribuidorSection" class="hidden">
+    <h4>Agregar punto de entrega</h4>
+    <input type="text" id="puntoNombre" placeholder="Nombre del punto" />
+    <input type="text" id="puntoContacto" placeholder="Contacto" />
+    <button onclick="agregarPunto()">Agregar punto con posición actual</button>
+
+    <h4>Entregas pendientes</h4>
+    <ul id="entregasPendientes"></ul>
+  </div>
+
+  <div id="adminSection" class="hidden">
+    <h4>Asignar entrega</h4>
+    <select id="selectPunto"></select>
+    <input type="text" id="entregaDesc" placeholder="Descripción de la entrega" />
+    <button onclick="asignarEntrega()">Asignar entrega</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+
+<script>
+  const supabase = window.supabase.createClient(
+    'https://etjhaciiqshqmxxphzrp.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0amhhY2lpcXNocW14eHBoenJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAwNTQ3NDMsImV4cCI6MjA2NTYzMDc0M30.tVf6AzmNa8Bs2F-iE7Qj9F5b1-4jQV2-SlfKrYXy_yM' // Tu clave pública
+  );
+
+  let map, markers = {}, rol = null;
+  let usuarioFalsoID = '642b28a3-144c-4ece-a5eb-954bc2fa5c54'; // ID simulado para pruebas sin login
+
+  function initMap() {
+    map = L.map('map').setView([31.6904, -106.4245], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+  }
+
+  function entrarComo(tipo) {
+    rol = tipo;
+    document.getElementById('roleSelection').classList.add('hidden');
+    document.getElementById('appDiv').classList.remove('hidden');
+    if (!map) initMap();
+
+    if (rol === 'administrador') {
+      document.getElementById('adminSection').classList.remove('hidden');
+      document.getElementById('distribuidorSection').classList.add('hidden');
+      cargarPuntos(true);
+    } else {
+      document.getElementById('distribuidorSection').classList.remove('hidden');
+      document.getElementById('adminSection').classList.add('hidden');
+      cargarPuntos(false);
+      cargarEntregas();
+    }
+  }
+
+  function regresar() {
+    document.getElementById('appDiv').classList.add('hidden');
+    document.getElementById('roleSelection').classList.remove('hidden');
+    clearMarkers();
+  }
+
+  async function cargarPuntos(esAdmin) {
+    clearMarkers();
+    let query = supabase.from('puntos').select('*');
+    if (!esAdmin) query = query.eq('distribuidor_id', usuarioFalsoID);
+    const { data, error } = await query;
+    if (error) return alert('Error cargando puntos');
+
+    data.forEach(p => agregarMarcador(p.id, p));
+    if (esAdmin) cargarSelectPuntos(data);
+  }
+
+  function agregarMarcador(id, data) {
+    const marker = L.marker([data.lat, data.lng]).addTo(map);
+    marker.bindPopup(`<b>${data.nombre}</b><br>${data.contacto}`);
+    markers[id] = marker;
+  }
+
+  function clearMarkers() {
+    for (const id in markers) map.removeLayer(markers[id]);
+    markers = {};
+  }
+
+  function agregarPunto() {
+    if (!navigator.geolocation) return alert('Tu navegador no soporta ubicación');
+    const nombre = document.getElementById('puntoNombre').value;
+    const contacto = document.getElementById('puntoContacto').value;
+    if (!nombre || !contacto) return alert('Llena los campos');
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      const { error } = await supabase.from('puntos').insert([{
+        nombre, contacto, lat, lng, distribuidor_id: usuarioFalsoID
+      }]);
+      if (error) alert('Error al agregar: ' + error.message);
+      else {
+        alert('Punto agregado');
+        document.getElementById('puntoNombre').value = '';
+        document.getElementById('puntoContacto').value = '';
+        cargarPuntos(false);
+      }
+    }, () => alert('No se pudo obtener ubicación'));
+  }
+
+  async function cargarEntregas() {
+    const { data, error } = await supabase
+      .from('entregas')
+      .select('*')
+      .eq('distribuidor_id', usuarioFalsoID)
+      .eq('estado', 'pendiente');
+    if (error) return alert('Error cargando entregas');
+
+    const list = document.getElementById('entregasPendientes');
+    list.innerHTML = '';
+    data.forEach(e => {
+      const li = document.createElement('li');
+      li.textContent = `${e.descripcion} (Punto ID: ${e.punto_id}) `;
+      const btn = document.createElement('button');
+      btn.textContent = 'Marcar entregada';
+      btn.onclick = () => marcarEntregada(e.id);
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+  async function marcarEntregada(id) {
+    const { error } = await supabase
+      .from('entregas')
+      .update({ estado: 'entregada', fecha_entrega: new Date().toISOString() })
+      .eq('id', id);
+    if (error) alert('Error actualizando');
+    else cargarEntregas();
+  }
+
+  function cargarSelectPuntos(puntos) {
+    const select = document.getElementById('selectPunto');
+    select.innerHTML = '';
+    puntos.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = `${p.nombre} (${p.contacto})`;
+      select.appendChild(o);
+    });
+  }
+
+  async function asignarEntrega() {
+    const puntoId = document.getElementById('selectPunto').value;
+    const descripcion = document.getElementById('entregaDesc').value;
+    if (!puntoId || !descripcion) return alert('Faltan datos');
+
+    const { data: punto, error } = await supabase
+      .from('puntos')
+      .select('*')
+      .eq('id', puntoId)
+      .single();
+    if (error || !punto) return alert('Punto no encontrado');
+
+    const { error: insertError } = await supabase.from('entregas').insert([{
+      punto_id: puntoId,
+      distribuidor_id: punto.distribuidor_id,
+      descripcion,
+      estado: 'pendiente',
+      fecha_asignacion: new Date().toISOString()
+    }]);
+    if (insertError) alert('Error asignando: ' + insertError.message);
+    else {
+      alert('Entrega asignada');
+      document.getElementById('entregaDesc').value = '';
+    }
+  }
+</script>
+</body>
+</html>
